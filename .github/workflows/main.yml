@@ -24,8 +24,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install pylint
     -name: Analyze python codes with pylint
-      run: |
-        find . -name '*.py' -exec pylint {} \;
+    run: |
+      find . -name '*.py' -exec pylint {} \;
 
 - name: Python Pylint GitHub Action
   uses: fylein/python-pylint-github-action@v1
