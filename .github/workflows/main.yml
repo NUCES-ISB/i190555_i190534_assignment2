@@ -3,38 +3,21 @@ on:
   push:
     branches: [i190555]
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        # matrix feature is used to run the same job on three different versions of Python (3.7, 3.8, and 3.9) and to check the dependencies for each of those versions.
-        python-version: [3.7, 3.8, 3.9]
-
-        # required libraries list
-        dependencies: [pandas, scikit_learn]
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.9"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Check dependencies
         run: |
-          pip check
-          pip list --outdated
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Update dependencies
-        if: ${{ job.status == 'success' }}
-        run: |
-          pip install -U ${{ matrix.dependencies }}
+      - run: |
+          check-manifest -v
 
       - name: Test code
         run: pytest
