@@ -83,10 +83,18 @@ def train_lstm():
     print('lstm_summary:\n', lstm.summary())
 
     # fit model to training data
-    history = lstm.fit(X_train, y_train, epochs=100,
+    history = lstm.fit(X_train, y_train, epochs=10,
                        batch_size=4, verbose=2, shuffle=False)
     print(history)
 
+    # form pkl
+    import pickle
+    from keras.models import load_model
+    lstm.save('stock_close_model.h5')
+    # save the model to a .pkl file using pickle
+    with open('stock_close_model.pkl', 'wb') as f:
+        pickle.dump(lstm, f)
 
-# df = get_training_data()
+
+get_training_data()
 train_lstm()
