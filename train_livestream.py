@@ -1,91 +1,92 @@
 import pandas as pd
 from pathlib import Path
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
 import datetime
+import tensorflow as tf
 from psx import stocks, tickers
 
 
-def fetch_live_data():
-    tickers = tickers()
-    data = stocks("SILK", start=datetime.date(
-        2020, 1, 1), end=datetime.date.today())
-    print("Data:\n", data)
+def get_training_data():
+    fname = "live_stream_training_data.csv"
+    try:
+        # getting the live data from the stocks of the given banks till 28/02/2023
+        data = stocks(["SILK", "UBL", "HBL", "AKBL"],
+                      start=datetime.date(2015, 1, 1), end=datetime.date(2023, 2, 28))
+        # removing the null data
+        print('type(data) = ', type(data))
+        data.dropna()
+        # saving the data in .csv files
+        data.to_csv(fname, mode='w')
+        # print("data_frame describe = ", data_frame.describe)
+    except:
+        print("Unable to get the data atm!")
 
 
-# Load the data
-df = pd.read_csv('archive/training.1600000.processed.noemoticon.csv',
-                 encoding='latin-1', header=None)
-df.columns = ['sentiment', 'id', 'date', 'query', 'user', 'text']
-df = df.drop(['id', 'date', 'query', 'user'], axis=1)
-
-# Preprocess the data
-df['sentiment'] = df['sentiment'].replace({0: 'negative', 4: 'positive'})
-
-# Split data into training and test sets
-X_train, X_test, y_train, y_test = train_test_split(
-    df['text'], df['sentiment'], test_size=0.2, random_state=42)
-
-# Training
-# Set the experiment name
-# mlflow.set_experiment('Sentiment Analysis')
-
-# # Start a new MLflow run
-# with mlflow.start_run(run_name="lr"):
-
-#     # Vectorize the text data
-#     vectorizer = TfidfVectorizer()
-#     X_train_vect = vectorizer.fit_transform(X_train)
-
-#     # Train the model
-#     lr = LogisticRegression()
-#     lr.fit(X_train_vect, y_train)
-
-#     # Log the model parameters and metrics to MLflow
-#     mlflow.log_param('C', lr.get_params()['C'])
-#     mlflow.log_metric('train_accuracy', lr.score(X_train_vect, y_train))
-
-#     # Vectorize the test data
-#     X_test_vect = vectorizer.transform(X_test)
-
-#     # Evaluate the model
-#     y_pred = lr.predict(X_test_vect)
-#     test_accuracy = accuracy_score(y_test, y_pred)
-
-#     # Log the test accuracy to MLflow
-#     mlflow.log_metric('test_accuracy', test_accuracy)
-
-#     # Save the model to disk and log it to MLflow
-#     mlflow.sklearn.log_model(lr, 'model')
+def lstm_split(data, n_steps):
+    X, y = [], []
+    for i in range(len(data)-n_steps+1):
+        X.append(data[i:i+n_steps])
+        y.append(data[i+n_steps-1, -1])
+    return tf.convert_to_tensor(np.array(X).astype('float32')), tf.convert_to_tensor(np.array(y).astype('float32'))
 
 
-# # Load all runs from experiment
-# experiment_id = mlflow.get_experiment_by_name(
-#     "Sentiment Analysis").experiment_id
-# all_runs = mlflow.search_runs(experiment_ids=experiment_id, order_by=[
-#                               "metrics.test_accuracy"])
-# print(all_runs)
+def train_lstm():
+
+    # preprocessing our data using scikit-learn
+    from sklearn.preprocessing import MinMaxScaler, StandardScaler
+    from sklearn.metrics import mean_squared_error
+    from sklearn.metrics import mean_absolute_percentage_error
+    from sklearn.model_selection import train_test_split
+    from sklearn.model_selection import TimeSeriesSplit
+
+    # building our LSTM models using Tensorflow Keras
+    from tensorflow.keras.models import Sequential
+    from tensorflow.keras.layers import Dense
+    from tensorflow.keras.layers import LSTM
+    from tensorflow.keras.layers import Dropout
+    # from tensorflow.keras.layers import *
+    from tensorflow.keras.callbacks import EarlyStopping
+
+    # Data Preprocessing
+    # features
+    # target_y = df['Close']
+    # print('dataframe - \n', df)
+    # print('df describe() = ', df.describe())
+    df = pd.read_csv('live_stream_training_data.csv')
+    feature_X = df.iloc[:, 2:5]
+    sc = StandardScaler()
+    X_ft = sc.fit_transform(feature_X.values)
+    X_ft = pd.DataFrame(columns=feature_X.columns,
+                        data=X_ft, index=feature_X.index)
+
+    # Train and Test Sets for Stock Price Prediction
+    X1, y1 = lstm_split(X_ft.values, n_steps=2)
+
+    train_split = 0.8
+    split_idx = int(np.ceil(len(X1)*train_split))
+    date_index = df.index
+
+    X_train, X_test = X1[:split_idx], X1[split_idx:]
+    y_train, y_test = y1[:split_idx], y1[split_idx:]
+    x_train_date, x_test_date = date_index[:split_idx], date_index[split_idx:]
+
+    print(X1.shape, X_train.shape, X_test.shape, y_test.shape)
+
+    lstm = Sequential()
+    lstm.add(LSTM(32, input_shape=(X_train.shape[1], X_train.shape[2]),
+                  activation='relu', return_sequences=True))
+    lstm.add(Dense(1))
+    lstm.compile(loss='mean_squared_error', optimizer='adam')
+
+    print('lstm_summary:\n', lstm.summary())
+
+    # fit model to training data
+    history = lstm.fit(X_train, y_train, epochs=100,
+                       batch_size=4, verbose=2, shuffle=False)
+    print(history)
 
 
-# Start a new MLflow run
-
-# Vectorize the text data
-vectorizer = TfidfVectorizer()
-X_train_vect = vectorizer.fit_transform(X_train)
-
-# Train the model
-lr = LogisticRegression()
-lr.fit(X_train_vect, y_train)
-
-# Log the model parameters and metrics to MLflow
-
-# Vectorize the test data
-X_test_vect = vectorizer.transform(X_test)
-
-# Evaluate the model
-y_pred = lr.predict(X_test_vect)
-test_accuracy = accuracy_score(y_test, y_pred)
-
-print('test_accuracy', test_accuracy)
+# df = get_training_data()
+train_lstm()
