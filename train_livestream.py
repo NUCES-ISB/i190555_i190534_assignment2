@@ -4,6 +4,16 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
+import datetime
+from psx import stocks, tickers
+
+
+def fetch_live_data():
+    tickers = tickers()
+    data = stocks("SILK", start=datetime.date(
+        2020, 1, 1), end=datetime.date.today())
+    print("Data:\n", data)
+
 
 # Load the data
 df = pd.read_csv('archive/training.1600000.processed.noemoticon.csv',

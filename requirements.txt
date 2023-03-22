@@ -1,2 +1,3 @@
 pandas==1.4.1
 scikit_learn==1.2.2
+psx==0.0.6

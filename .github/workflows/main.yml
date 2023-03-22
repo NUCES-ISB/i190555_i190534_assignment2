@@ -6,14 +6,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # - name: Write requirements.txt test
-      #   run: |
-      #     pipreqs > requirements.txt
-      # with:
-      #   PROJECT_PATH: project_folder   #default is the root of the repository
-      #   REQUIREMENT_PATH: project_folder/requirements.txt  #default is requirement.txt in the root of your repository
-
       - uses: actions/checkout@v2
+
       - name: Set up Python 3.8
         uses: actions/setup-python@v1
         with:
@@ -26,6 +20,7 @@ jobs:
           pip install pylint
           pipreqs > requirements.txt
           pip install -r requirements.txt
+
       - name: Analyze python codes with pylint
         run: |
           find . -name '*.py' -exec pylint {} \;
