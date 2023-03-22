@@ -1,7 +1,5 @@
 name: Check and Resolve Dependencies
-on:
-  push:
-    branches: [i190555]
+on: push
 jobs:
   build:
     runs-on: ubuntu-latest
