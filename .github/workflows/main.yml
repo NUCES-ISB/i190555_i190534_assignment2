@@ -20,4 +20,5 @@ jobs:
       #     check-manifest -v
 
       - name: Test code
-        run: pytest
+        run: |
+          pytest
