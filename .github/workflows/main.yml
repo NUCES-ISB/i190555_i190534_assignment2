@@ -12,7 +12,7 @@ jobs:
         python-version: [3.7, 3.8, 3.9]
 
         # required libraries list
-        dependencies: [numpy, pandas, matplotlib]
+        dependencies: [pandas, scikit_learn]
 
     steps:
       - name: Checkout Code
